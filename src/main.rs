@@ -2,6 +2,7 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::time::Duration;
+#[allow(non_snake_case)]
 
 fn main() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
