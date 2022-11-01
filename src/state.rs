@@ -4,6 +4,11 @@ use winit::{
     event::*,
     window::Window,
 };
+use wgpu::util::DeviceExt;
+
+pub use crate::vertex::Vertex;
+pub use crate::vertex::VERTICES;
+
 
 pub struct State {
     pub surface: wgpu::Surface,
@@ -12,10 +17,12 @@ pub struct State {
     pub config: wgpu::SurfaceConfiguration,
     pub size: winit::dpi::PhysicalSize<u32>,
     pub render_pipeline: wgpu::RenderPipeline,
+    pub vertex_buffer: wgpu::Buffer,
+    pub num_vertices: u32,
 }
 
 impl State {
-    // Creating some of the wgpu types requires async code
+    
     pub async fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
@@ -36,8 +43,6 @@ impl State {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     features: wgpu::Features::empty(),
-                    // WebGL doesn't support all of wgpu's features, so if
-                    // we're building for the web we'll have to disable some.
                     limits: if cfg!(target_arch = "wasm32") {
                         wgpu::Limits::downlevel_webgl2_defaults()
                     } else {
@@ -45,7 +50,7 @@ impl State {
                     },
                     label: None,
                 },
-                None, // Trace path
+                None, 
             )
             .await
             .unwrap();
@@ -73,44 +78,50 @@ impl State {
         push_constant_ranges: &[],
     });
 
-    let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("Render Pipeline"),
-        layout: Some(&render_pipeline_layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: "vs_main", // 1.
-            buffers: &[], // 2.
-        },
-        fragment: Some(wgpu::FragmentState { // 3.
-            module: &shader,
-            entry_point: "fs_main",
-            targets: &[Some(wgpu::ColorTargetState { // 4.
-                format: config.format,
-                blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-        }),  primitive: wgpu::PrimitiveState {
-            topology: wgpu::PrimitiveTopology::TriangleList, // 1.
-            strip_index_format: None,
-            front_face: wgpu::FrontFace::Ccw, // 2.
-            cull_mode: Some(wgpu::Face::Back),
-            // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
-            polygon_mode: wgpu::PolygonMode::Fill,
-            // Requires Features::DEPTH_CLIP_CONTROL
-            unclipped_depth: false,
-            // Requires Features::CONSERVATIVE_RASTERIZATION
-            conservative: false,
-        }, depth_stencil: None, // 1.
-        multisample: wgpu::MultisampleState {
-            count: 1, // 2.
-            mask: !0, // 3.
-            alpha_to_coverage_enabled: false, // 4.
-        },
-        multiview: None, // 5.
-    });
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Render Pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: "vs_main",
+                buffers: &[Vertex::desc()], 
+            },
+            fragment: Some(wgpu::FragmentState { 
+                module: &shader,
+                entry_point: "fs_main",
+                targets: &[Some(wgpu::ColorTargetState { 
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),  primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw, 
+                cull_mode: Some(wgpu::Face::Back),
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false,
+            }, depth_stencil: None, 
+            multisample: wgpu::MultisampleState {
+                count: 1, 
+                mask: !0, 
+                alpha_to_coverage_enabled: false, 
+            },
+            multiview: None, 
+        });
 
-    
 
+        let vertex_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(VERTICES),
+                usage: wgpu::BufferUsages::VERTEX,
+            }
+        );
+
+        let num_vertices = VERTICES.len() as u32;
+        
         return Self {
             surface,
             device,
@@ -118,6 +129,8 @@ impl State {
             config,
             size,
             render_pipeline,
+            vertex_buffer,
+            num_vertices,
         };
     }
 
@@ -153,7 +166,6 @@ impl State {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[
-                    // This is what @location(0) in the fragment shader targets
                     Some(wgpu::RenderPassColorAttachment {
                         view: &view,
                         resolve_target: None,
@@ -173,11 +185,11 @@ impl State {
                 depth_stencil_attachment: None,
             });
         
-            render_pass.set_pipeline(&self.render_pipeline); // 2.
-            render_pass.draw(0..3, 0..1); // 3.
+            render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.draw(0..self.num_vertices, 0..1);
         }
 
-        // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
 
