@@ -1,6 +1,7 @@
 #![allow(non_snake_case, unused_variables, dead_code)]
 
 pub mod camera;
+pub mod camera_controller;
 pub mod texture;
 pub mod vertex;
 pub mod state;

@@ -9,6 +9,7 @@ pub use crate::vertex::INDICES;
 pub use crate::vertex::VERTICES;
 pub use crate::camera::Camera;
 pub use crate::camera::CameraUniform;
+pub use crate::camera_controller::CameraController;
 
 pub struct State {
     pub surface: wgpu::Surface,
@@ -26,6 +27,7 @@ pub struct State {
     pub camera_uniform: CameraUniform,
     pub camera_buffer: wgpu::Buffer,
     pub camera_bind_group: wgpu::BindGroup,
+    pub camera_controller: CameraController,
 }
 
 impl State {
@@ -228,7 +230,10 @@ impl State {
             contents: bytemuck::cast_slice(INDICES),
             usage: wgpu::BufferUsages::INDEX,
         });
+        
         let num_indices = INDICES.len() as u32;
+
+        let camera_controller = CameraController::new(0.2);
 
         return Self {
             surface,
@@ -245,7 +250,8 @@ impl State {
             camera,
             camera_uniform,
             camera_buffer,
-             camera_bind_group,
+            camera_bind_group,
+            camera_controller,
         };
     }
 
@@ -259,11 +265,13 @@ impl State {
     }
 
     pub fn input(&mut self, event: &WindowEvent) -> bool {
-        return false;
+        return self.camera_controller.process_events(event);
     }
 
     pub fn update(&mut self) {
-        //todo!()
+        self.camera_controller.update_camera(&mut self.camera);
+        self.camera_uniform.update_view_proj(&self.camera);
+        self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -299,7 +307,7 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-            
+
             render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
             render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
 
