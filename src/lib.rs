@@ -1,5 +1,6 @@
 #![allow(non_snake_case, unused_variables, dead_code)]
 
+mod texture;
 pub mod vertex;
 pub mod state;
 pub use crate::state::State;
