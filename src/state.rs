@@ -392,7 +392,7 @@ impl State {
             use crate::model::DrawModel;
             let mesh = &self.obj_model.meshes[0];
             let material = &self.obj_model.materials[mesh.material];
-            render_pass.draw_mesh_instanced(mesh, material, 0..self.instances.len() as u32, &self.camera_bind_group);
+            render_pass.draw_model_instanced(&self.obj_model, 0..self.instances.len() as u32, &self.camera_bind_group);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
