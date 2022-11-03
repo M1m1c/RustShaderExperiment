@@ -1,2 +1,6 @@
 /target
 src/cuddlyferris.png
+*.jpg
+*.png
+*.mtl
+*.obj

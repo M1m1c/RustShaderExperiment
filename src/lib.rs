@@ -1,10 +1,11 @@
 #![allow(non_snake_case, unused_variables, dead_code)]
 
+pub mod resources;
 pub mod instance;
 pub mod camera;
 pub mod camera_controller;
 pub mod texture;
-pub mod vertex;
+pub mod model;
 pub mod state;
 pub use crate::state::State;
 
