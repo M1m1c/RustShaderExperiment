@@ -6,6 +6,7 @@ pub mod camera;
 pub mod camera_controller;
 pub mod texture;
 pub mod model;
+pub mod light;
 pub mod state;
 pub use crate::state::State;
 
