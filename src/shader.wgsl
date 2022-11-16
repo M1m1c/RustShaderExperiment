@@ -51,10 +51,14 @@ fn vs_main( model: VertexInput, instance: InstanceInput,) -> VertexOutput
 
     var out: VertexOutput;
     out.world_normal = normal_matrix * model.normal;
+
     var world_position: vec4<f32> = model_matrix * vec4<f32>(model.position, 1.0);
     out.world_position = world_position.xyz;
+
     out.clip_position = camera.view_proj * world_position;
+
     out.tex_coords = model.tex_coords;
+
     return out;
 }
 
@@ -89,7 +93,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32>
     let half_dir = normalize(view_dir + light_dir);
 
     let specular_strength = pow(max(dot(in.world_normal, half_dir), 0.0), 32.0);
-
 
     let specular_color = specular_strength * light.color;
 
