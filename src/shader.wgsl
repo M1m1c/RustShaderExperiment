@@ -10,12 +10,6 @@ struct InstanceInput {
     @location(11) normal_matrix_2: vec3<f32>,
 };
 
-// struct CameraUniform {
-//     view_proj: mat4x4<f32>,
-// };
-// @group(1) @binding(0)
-// var<uniform> camera: CameraUniform;
-
 struct Camera {
     view_pos: vec4<f32>,
     view_proj: mat4x4<f32>,
@@ -90,11 +84,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32>
 
     let diffuse_strength = max(dot(in.world_normal, light_dir), 0.0);
     let diffuse_color = light.color * diffuse_strength;
-
-    // let view_dir = normalize(camera.view_pos.xyz - in.world_position);
-    // let reflect_dir = reflect(-light_dir, in.world_normal);
-
-    // let specular_strength = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0);
 
     let view_dir = normalize(camera.view_pos.xyz - in.world_position);
     let half_dir = normalize(view_dir + light_dir);

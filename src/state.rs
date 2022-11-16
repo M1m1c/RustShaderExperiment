@@ -376,8 +376,8 @@ impl State {
 
     pub fn update(&mut self, dt: instant::Duration) {
         self.camera_controller.update_camera(&mut self.camera, dt);
-        self.camera_uniform
-            .update_view_proj(&self.camera, &self.projection);
+        self.camera_uniform.update_view_proj(&self.camera, &self.projection);
+        
         self.queue.write_buffer(
             &self.camera_buffer,
             0,
@@ -386,11 +386,13 @@ impl State {
 
         // Update the light
         let old_position: cgmath::Vector3<_> = self.light_uniform.position.into();
+
         self.light_uniform.position = (cgmath::Quaternion::from_axis_angle(
             (0.0, 1.0, 0.0).into(),
             cgmath::Deg(60.0 * dt.as_secs_f32()),
         ) * old_position)
             .into();
+            
         self.queue.write_buffer(
             &self.light_buffer,
             0,
